@@ -1,4 +1,4 @@
-# Little Days — private family twin tracker
+# TwinTrack — private family twin tracker
 
 A mobile-first, shared baby-care tracker built with **Vite + vanilla JavaScript + Supabase + Chart.js**. Deploys as a static site on GitHub Pages. The code is public if the GitHub repository is public; **the baby records are not stored in GitHub**.
 
