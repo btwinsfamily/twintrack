@@ -72,3 +72,11 @@ The activities table has `(baby_id, started_at)` index, `created_by` attribution
 - **Invite rejected:** confirm invited email matches the signed-in account, link has not expired/been used, and the URL fragment remains intact.
 - **GitHub deployment fails:** confirm the GitHub Actions dependency-install step, configuration variables and Pages source.
 - **Real-time updates delayed:** check Supabase Realtime status; refresh the page to reload records.
+
+## Adding birth date and time to an existing installation
+
+Before deploying the Add Birthday feature, run `supabase/migrations/20261115_add_birthday.sql` once in your project's Supabase SQL Editor. Do not rerun the full `schema.sql` against an existing database. Fresh installations use the updated `schema.sql` and do not need this migration.
+
+In **Family → Baby profiles**, the family owner can select **Add birth date and time** for each baby, enter the local date and time recorded at birth, and confirm the details. Cancel leaves the record unchanged. After saving, all family members can read the details; the app and a database trigger prevent changing or clearing them. Name editing still works. Existing date-only records can be completed with a confirmed date and time once. Other devices see changes after reloading.
+
+Times are stored as local clock values without timezone conversion, so all devices display the recorded birth date and time consistently. A Supabase integration with Codex is optional: the migration can be applied manually in SQL Editor. Apply the migration before merging/deploying the frontend change.

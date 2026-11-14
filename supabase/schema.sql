@@ -18,9 +18,24 @@ create table public.babies (
   family_id uuid not null references public.families(id) on delete cascade,
   name text not null check (length(trim(name)) between 1 and 80),
   birth_date date,
+  birth_time time(0) without time zone check (birth_time < time '24:00'),
+  check (birth_time is null or birth_date is not null),
   created_at timestamptz not null default now(),
   unique (id,family_id)
 );
+-- Preserve recorded local birth date/time once both have been saved.
+create function public.protect_baby_birth() returns trigger
+language plpgsql set search_path = '' as $$
+begin
+ if old.birth_time is not null and
+    (new.birth_date is distinct from old.birth_date or new.birth_time is distinct from old.birth_time) then
+   raise exception 'Recorded birth date and time cannot be changed';
+ end if;
+ return new;
+end $$;
+create trigger baby_birth_protect before update on public.babies
+for each row execute function public.protect_baby_birth();
+
 create table public.activities (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null,
