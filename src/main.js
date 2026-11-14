@@ -18,9 +18,94 @@ async function sha256(s){const bytes=await crypto.subtle.digest('SHA-256',new Te
 function authView(){app.innerHTML=`<main class="auth"><div class="brand-icon">♥ ♥</div><h1>Little Days</h1><p class="muted">A calmer way to care, together.</p><section class="panel"><h2>Family sign in</h2><form id="auth-form"><label>Email<input name="email" type="email" autocomplete="email" required placeholder="you@example.com"></label><label>Password<input name="password" type="password" autocomplete="current-password" minlength="8" required></label><div class="actions"><button type="submit" name="action" value="signin">Sign in</button><button type="submit" class="secondary" name="action" value="signup">Create account</button></div></form><p class="muted small">Email confirmation may be required. Use the same email address as your family invitation.</p></section></main>`;
  document.querySelector('#auth-form').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target), action=e.submitter?.value||'signin',email=f.get('email'),password=f.get('password');try{const {error:err}=action==='signup'?await supabase.auth.signUp({email,password}):await supabase.auth.signInWithPassword({email,password});if(err)throw err;if(action==='signup')alert('Account created. If email confirmation is enabled, check your inbox before signing in.');}catch(ex){error(ex)}};
 }
-function setupView(){app.innerHTML=`<main class="auth"><div class="brand-icon">♥ ♥</div><h1>Welcome to Little Days</h1><p class="muted">Create a family, or open the invitation link shared with you.</p><section class="panel"><h2>Set up your family</h2><form id="setup"><label>Family name<input name="name" required maxlength="80" placeholder="Our family"></label><label>First baby’s name<input name="a" required maxlength="80" placeholder="Baby A"></label><label>Second baby’s name<input name="b" required maxlength="80" placeholder="Baby B"></label><button>Create family</button></form></section><button class="link" id="logout">Sign out</button></main>`;
- document.querySelector('#logout').onclick=()=>supabase.auth.signOut();
- document.querySelector('#setup').onsubmit=async e=>{e.preventDefault();const f=new FormData(e.target);try{const {data:family,error:err}=await supabase.from('families').insert({name:f.get('name').trim(),created_by:state.session.user.id}).select().single();if(err)throw err;const {error:be}=await supabase.from('babies').insert([{family_id:family.id,name:f.get('a').trim()},{family_id:family.id,name:f.get('b').trim()}]);if(be)throw be;await load();}catch(ex){error(ex)}};
+
+function setupView() {
+  app.innerHTML = `
+    <main class="auth">
+      <div class="brand-icon">♥ ♥</div>
+      <h1>Welcome to TwinTrack</h1>
+      <p class="muted">
+        Create your private family workspace.
+      </p>
+
+      <section class="panel">
+        <h2>Set up your family</h2>
+
+        <form id="setup">
+          <label>
+            Family name
+            <input name="name" required maxlength="80"
+                   placeholder="Our family">
+          </label>
+
+          <label>
+            First baby’s name
+            <input name="a" required maxlength="80"
+                   placeholder="Baby A">
+          </label>
+
+          <label>
+            Second baby’s name
+            <input name="b" required maxlength="80"
+                   placeholder="Baby B">
+          </label>
+
+          <button type="submit">
+            Create family
+          </button>
+        </form>
+      </section>
+
+      <button class="link" id="logout">
+        Sign out
+      </button>
+    </main>
+  `;
+
+  document.querySelector('#logout').onclick =
+    () => supabase.auth.signOut();
+
+  document.querySelector('#setup').onsubmit =
+    async (e) => {
+      e.preventDefault();
+
+      const form = e.target;
+      const button = form.querySelector(
+        'button[type="submit"]'
+      );
+
+      const f = new FormData(form);
+
+      button.disabled = true;
+      button.textContent = 'Creating family...';
+
+      try {
+        const { data, error: err } =
+          await supabase.rpc(
+            'create_family_with_twins',
+            {
+              family_name:
+                String(f.get('name')).trim(),
+              baby_a_name:
+                String(f.get('a')).trim(),
+              baby_b_name:
+                String(f.get('b')).trim()
+            }
+          );
+
+        if (err) throw err;
+
+        console.log('Family created:', data);
+
+        await load();
+
+      } catch (ex) {
+        error(ex);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Create family';
+      }
+    };
 }
 async function load(){if(!state.session)return authView();try{
  const {data:members,error:me}=await supabase.from('family_members').select('family_id,role').eq('user_id',state.session.user.id);if(me)throw me;
